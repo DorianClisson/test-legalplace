@@ -56,59 +56,46 @@ export class Pharmacy {
     constructor(drugs = []) {
         this.drugs = drugs;
     }
+
     updateBenefitValue() {
-        for (var i = 0; i < this.drugs.length; i++) {
-            if (
-                this.drugs[i].name != "Herbal Tea" &&
-                this.drugs[i].name != "Fervex"
-            ) {
-                if (this.drugs[i].benefit > 0) {
-                    if (this.drugs[i].name != "Magic Pill") {
-                        this.drugs[i].benefit = this.drugs[i].benefit - 1;
-                    }
+        this.drugs = this.drugs.map((currentDrug) => {
+            const drugConfig =
+                DRUGS_CONFIG[currentDrug.name] ?? DRUGS_CONFIG["default"];
+
+            // apply benefit change before expiration
+            if (currentDrug.expiresIn > 0) {
+                // 1. check for special change depending on days left
+                const specificChange = drugConfig.benefitChangeByDaysLeft?.find(
+                    ({ daysLeft }) => currentDrug.expiresIn <= daysLeft
+                ); // as the array of specificChangesByDayLeft is sorted by minimum value on daysLeft we are sure to apply to correct value
+
+                if (specificChange) {
+                    currentDrug.benefit += specificChange.benefitChange;
                 }
-            } else {
-                if (this.drugs[i].benefit < 50) {
-                    this.drugs[i].benefit = this.drugs[i].benefit + 1;
-                    if (this.drugs[i].name == "Fervex") {
-                        if (this.drugs[i].expiresIn < 11) {
-                            if (this.drugs[i].benefit < 50) {
-                                this.drugs[i].benefit =
-                                    this.drugs[i].benefit + 1;
-                            }
-                        }
-                        if (this.drugs[i].expiresIn < 6) {
-                            if (this.drugs[i].benefit < 50) {
-                                this.drugs[i].benefit =
-                                    this.drugs[i].benefit + 1;
-                            }
-                        }
-                    }
+
+                // 2. Apply default drug benefit change
+                else {
+                    currentDrug.benefit += drugConfig.benefitChange;
                 }
             }
-            if (this.drugs[i].name != "Magic Pill") {
-                this.drugs[i].expiresIn = this.drugs[i].expiresIn - 1;
+            // else apply benefit change after expiration
+            else {
+                currentDrug.benefit += drugConfig.benefitChangeAfterExpiration;
             }
-            if (this.drugs[i].expiresIn < 0) {
-                if (this.drugs[i].name != "Herbal Tea") {
-                    if (this.drugs[i].name != "Fervex") {
-                        if (this.drugs[i].benefit > 0) {
-                            if (this.drugs[i].name != "Magic Pill") {
-                                this.drugs[i].benefit =
-                                    this.drugs[i].benefit - 1;
-                            }
-                        }
-                    } else {
-                        this.drugs[i].benefit =
-                            this.drugs[i].benefit - this.drugs[i].benefit;
-                    }
-                } else {
-                    if (this.drugs[i].benefit < 50) {
-                        this.drugs[i].benefit = this.drugs[i].benefit + 1;
-                    }
-                }
+
+            // subtract 1 day to drug if drug expires
+            if (drugConfig.doExpire) {
+                currentDrug.expiresIn -= 1;
             }
-        }
+
+            // apply common drug rules
+            currentDrug.benefit = Math.min(
+                Math.max(currentDrug.benefit, MIN_BENEFIT),
+                MAX_BENEFIT
+            );
+
+            return currentDrug;
+        });
 
         return this.drugs;
     }
