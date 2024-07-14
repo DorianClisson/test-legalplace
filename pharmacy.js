@@ -40,6 +40,12 @@ const DRUGS_CONFIG = {
         benefitChangeAfterExpiration: -999, // just set a high enough value to force benefit drop to 0
         doExpire: true,
     },
+    Dafalgan: {
+        benefitChange: -2,
+        benefitChangeByDaysLeft: null,
+        benefitChangeAfterExpiration: -4,
+        doExpire: true,
+    },
 };
 // sort each drug benefitChangeByDaysLeft in DRUGS_CONFIG to ensure the minimum daysLeft config is sorted first
 // so that .find() takes the lowest first because e.g. daysLeft 4 matches both <=5 & <=10
